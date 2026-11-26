@@ -220,6 +220,14 @@ namespace RetroBar.Controls
 
         private void Clock_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            // Themes with their own flyouts show the calendar on mouse up (see Clock_OnMouseLeftButtonUp):
+            // opened on mouse down, the release of the same click would close it right away.
+            if (Flyouts.FlyoutHost.IsEnabled)
+            {
+                e.Handled = true;
+                return;
+            }
+
             if (Settings.Instance.ClockClickAction == ClockClickOption.DoNothing)
             {
                 return;
@@ -255,8 +263,23 @@ namespace RetroBar.Controls
             }
         }
 
+        private void Clock_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (Flyouts.FlyoutHost.Toggle(this, () => new Flyouts.CalendarFlyout()))
+            {
+                e.Handled = true;
+            }
+        }
+
         private void Clock_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            if (Flyouts.FlyoutHost.IsEnabled)
+            {
+                // The calendar flyout already has a "date and time settings" shortcut.
+                e.Handled = true;
+                return;
+            }
+
             ShellHelper.StartProcess("timedate.cpl");
 
             e.Handled = true;

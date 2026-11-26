@@ -178,10 +178,26 @@ namespace RetroBar.Utilities
             }
         }
 
+        public static AppBarMode GetAppBarMode()
+        {
+            if (Settings.Instance.AutoHide)
+            {
+                return AppBarMode.AutoHide;
+            }
+
+            // Themes can float over windows instead of reserving screen space for the taskbar.
+            if (System.Windows.Application.Current.TryFindResource("FloatOverWindows") is bool floatOver && floatOver)
+            {
+                return AppBarMode.None;
+            }
+
+            return AppBarMode.Normal;
+        }
+
         private void openTaskbar(AppBarScreen screen)
         {
             ShellLogger.Debug($"WindowManager: Opening taskbar on screen {screen.DeviceName}");
-            Taskbar taskbar = new Taskbar(this, _dictionaryManager, _shellManager, _startMenuMonitor, _updater, _hotkeyManager, screen, Settings.Instance.Edge, Settings.Instance.AutoHide ? AppBarMode.AutoHide : AppBarMode.Normal);
+            Taskbar taskbar = new Taskbar(this, _dictionaryManager, _shellManager, _startMenuMonitor, _updater, _hotkeyManager, screen, Settings.Instance.Edge, GetAppBarMode());
             taskbar.Show();
 
             _taskbars.Add(taskbar);

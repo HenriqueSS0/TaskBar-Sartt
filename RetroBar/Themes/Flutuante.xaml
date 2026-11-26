@@ -1,0 +1,879 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <!--
+        Tema "Flutuante" - identidade Sartt.
+        Barra compacta e centralizada, que só cresce quando há muitos apps abertos.
+        Para mudar a identidade, comece pela PALETA e pela MARCA logo abaixo.
+    -->
+
+    <!-- ===================== PALETA (tons de cinza) ===================== -->
+    <Color x:Key="FloatAccentColor">#E4E6EA</Color>
+    <SolidColorBrush x:Key="FloatAccent" Color="{StaticResource FloatAccentColor}" />
+    <SolidColorBrush x:Key="FloatBackground" Color="#FF2B2C30" />
+    <SolidColorBrush x:Key="FloatBorder" Color="#24FFFFFF" />
+    <SolidColorBrush x:Key="FloatForeground" Color="#F0F2F4F7" />
+    <SolidColorBrush x:Key="FloatMuted" Color="#8CFFFFFF" />
+    <SolidColorBrush x:Key="FloatHover" Color="#17FFFFFF" />
+    <SolidColorBrush x:Key="FloatPressed" Color="#0DFFFFFF" />
+    <SolidColorBrush x:Key="FloatActive" Color="#24FFFFFF" />
+    <SolidColorBrush x:Key="FloatFlashing" Color="#59FFB454" />
+    <SolidColorBrush x:Key="FloatDivider" Color="#1FFFFFFF" />
+    <SolidColorBrush x:Key="FloatPopupBackground" Color="#FF2B2C30" />
+    <FontFamily x:Key="FloatFont">Segoe UI</FontFamily>
+
+    <!-- ===================== MARCA ===================== -->
+    <system:String x:Key="BrandText">Sartt</system:String>
+    <FontFamily x:Key="BrandFont">Bahnschrift</FontFamily>
+    <!-- Logo: fonte e cor da letra dentro do selinho -->
+    <FontFamily x:Key="LogoFont">Bahnschrift</FontFamily>
+    <SolidColorBrush x:Key="LogoForeground" Color="#FF2B2C30" />
+
+    <!-- ===================== MEDIDAS ===================== -->
+    <!-- Altura total da faixa reservada (barra + margem flutuante) -->
+    <!-- A faixa é mais alta que a barra para os ícones poderem crescer (a parte vazia é transparente e não bloqueia cliques) -->
+    <system:Double x:Key="TaskbarHeight">66</system:Double>
+    <system:Double x:Key="TaskbarRowHeight">40</system:Double>
+    <system:Double x:Key="TaskbarWidth">86</system:Double>
+    <!-- Ampliação estilo dock: tamanho máximo do ícone sob o mouse (1 = desligado) -->
+    <system:Double x:Key="DockMagnification">1.5</system:Double>
+    <!-- Alcance da ampliação em pixels: menor = só o ícone sob o mouse cresce, os vizinhos quase nada -->
+    <system:Double x:Key="DockMagnificationRadius">58</system:Double>
+    <!-- A barra "surge" ao abrir e ao ser encaixada numa borda -->
+    <system:Boolean x:Key="AnimateAppear">True</system:Boolean>
+    <!-- Ícones de apps recém-abertos aparecem com um pulinho -->
+    <system:Boolean x:Key="TaskButtonPopIn">True</system:Boolean>
+    <system:Double x:Key="TaskbarUnlockedSize">0</system:Double>
+    <system:Double x:Key="TaskButtonWidth">38</system:Double>
+    <system:Double x:Key="TaskButtonMinWidth">30</system:Double>
+    <Thickness x:Key="TaskButtonMargin" Left="1" Right="1" />
+    <Thickness x:Key="TaskButtonVerticalMargin" Top="1" Bottom="1" />
+
+    <system:Boolean x:Key="AllowsTransparency">True</system:Boolean>
+    <system:Boolean x:Key="UseLargeIcons">True</system:Boolean>
+    <system:Boolean x:Key="UseFloatingStartButton">False</system:Boolean>
+    <system:Boolean x:Key="CompactTaskbar">True</system:Boolean>
+    <system:Double x:Key="CompactReservedWidth">560</system:Double>
+    <system:Boolean x:Key="TrayOverflowPopup">True</system:Boolean>
+    <!-- Apps maximizados ocupam a tela toda; a barra flutua por cima -->
+    <system:Boolean x:Key="FloatOverWindows">True</system:Boolean>
+    <!-- Arraste a barra (pelo fundo dela) para qualquer borda da tela -->
+    <system:Boolean x:Key="AllowDragWhenLocked">True</system:Boolean>
+    <system:Double x:Key="GlobalFontSize">12</system:Double>
+    <FontWeight x:Key="SetTimeMenuItemWeight">Normal</FontWeight>
+
+    <!-- Neutraliza as bordas 3D herdadas do tema base -->
+    <SolidColorBrush x:Key="ButtonHighlight" Color="Transparent" />
+    <SolidColorBrush x:Key="ButtonInnerHighlight" Color="Transparent" />
+    <SolidColorBrush x:Key="ButtonLight" Color="Transparent" />
+    <SolidColorBrush x:Key="ButtonFace" Color="Transparent" />
+    <SolidColorBrush x:Key="ButtonShadow" Color="Transparent" />
+    <SolidColorBrush x:Key="ButtonDarkShadow" Color="Transparent" />
+    <SolidColorBrush x:Key="ButtonFlashingFace" Color="#59FFB454" />
+    <SolidColorBrush x:Key="ButtonForeground" Color="#F0F2F4F7" />
+    <SolidColorBrush x:Key="ButtonFlashingForeground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="ClockForeground" Color="#F0F2F4F7" />
+    <SolidColorBrush x:Key="InputLanguageForeground" Color="#F0F2F4F7" />
+    <SolidColorBrush x:Key="InputLanguageBackground" Color="Transparent" />
+    <SolidColorBrush x:Key="InputLanguageSelectorForeground" Color="#F0F2F4F7" />
+    <SolidColorBrush x:Key="ToolTipBackground" Color="#FF2B2C30" />
+    <SolidColorBrush x:Key="ToolTipForeground" Color="#F0F2F4F7" />
+
+    <!-- ===================== TOOLTIP ===================== -->
+    <Style TargetType="ToolTip"
+           x:Key="{x:Type ToolTip}"
+           BasedOn="{StaticResource {x:Type ToolTip}}">
+        <Setter Property="FontFamily" Value="{DynamicResource FloatFont}" />
+        <Setter Property="Foreground" Value="{DynamicResource ToolTipForeground}" />
+        <Setter Property="HasDropShadow" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Background="{DynamicResource ToolTipBackground}"
+                            BorderBrush="{DynamicResource FloatBorder}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,5">
+                        <ContentPresenter />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===================== JANELA / CORPO DA BARRA ===================== -->
+    <Style TargetType="Window"
+           x:Key="TaskbarWindow"
+           BasedOn="{StaticResource TaskbarWindow}">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style TargetType="ContentControl"
+           x:Key="Taskbar"
+           BasedOn="{StaticResource Taskbar}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <!-- Pílula centralizada que se ajusta ao conteúdo -->
+                    <Grid x:Name="PillHost"
+                          HorizontalAlignment="Center"
+                          Margin="12,18,12,8"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1" />
+                        </Grid.RenderTransform>
+                        <Border x:Name="Shadow"
+                                CornerRadius="14"
+                                Background="#01000000">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="14"
+                                                  ShadowDepth="2"
+                                                  Direction="270"
+                                                  Opacity="0.4"
+                                                  Color="Black" />
+                            </Border.Effect>
+                        </Border>
+                        <Border x:Name="Pill"
+                                CornerRadius="14"
+                                Background="{DynamicResource FloatBackground}"
+                                BorderBrush="{DynamicResource FloatBorder}"
+                                BorderThickness="1">
+                            <ContentPresenter x:Name="Content"
+                                              Margin="5,2,3,2" />
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <!-- Enquanto arrasta: a barra "levanta" (cresce de leve, sombra maior) -->
+                        <DataTrigger Binding="{Binding Path=IsDragging, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                     Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PillHost" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.025" Duration="0:0:0.16">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="PillHost" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.06" Duration="0:0:0.16">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="PillHost" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.28">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.6" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="PillHost" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.28">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.6" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="PillHost" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                            <Setter TargetName="Shadow" Property="Margin" Value="0,2,0,-2" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=AppBarEdge, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                     Value="Top">
+                            <Setter TargetName="PillHost" Property="Margin" Value="12,8,12,18" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=AppBarEdge, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                     Value="Left">
+                            <Setter TargetName="PillHost" Property="Margin" Value="8,12,18,12" />
+                            <Setter TargetName="PillHost" Property="HorizontalAlignment" Value="Stretch" />
+                            <Setter TargetName="PillHost" Property="VerticalAlignment" Value="Center" />
+                            <Setter TargetName="Content" Property="Margin" Value="2,5" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=AppBarEdge, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                     Value="Right">
+                            <Setter TargetName="PillHost" Property="Margin" Value="18,12,8,12" />
+                            <Setter TargetName="PillHost" Property="HorizontalAlignment" Value="Stretch" />
+                            <Setter TargetName="PillHost" Property="VerticalAlignment" Value="Center" />
+                            <Setter TargetName="Content" Property="Margin" Value="2,5" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===================== BOTÃO INICIAR (lugar do logo) ===================== -->
+    <Style TargetType="ToggleButton"
+           x:Key="StartButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bg"
+                            Width="32"
+                            Height="32"
+                            CornerRadius="10"
+                            Background="Transparent">
+                        <!-- Logo provisório: será trocado pela logo Sartt -->
+                        <!-- Logo Sartt: "S" na fonte da marca, num selinho arredondado -->
+                        <Border x:Name="Logo"
+                                Width="19"
+                                Height="19"
+                                CornerRadius="6"
+                                Background="{DynamicResource FloatAccent}"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <RotateTransform Angle="0" />
+                            </Border.RenderTransform>
+                            <TextBlock Text="S"
+                                       FontFamily="{DynamicResource LogoFont}"
+                                       FontWeight="Bold"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource LogoForeground}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Margin="1,3,0,0"
+                                       TextOptions.TextRenderingMode="ClearType" />
+                        </Border>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- O logo inclina de leve ao passar o mouse -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatHover}" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Logo" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="-12" Duration="0:0:0.35">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Logo" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="0" Duration="0:0:0.3">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatActive}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatPressed}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Nome da marca ao lado do logo -->
+    <Style TargetType="TextBlock"
+           x:Key="BrandLabel">
+        <Setter Property="Visibility" Value="Visible" />
+        <Setter Property="Text" Value="{DynamicResource BrandText}" />
+        <Setter Property="FontFamily" Value="{DynamicResource BrandFont}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="Foreground" Value="{DynamicResource FloatForeground}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="2,0,8,1" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Path=Orientation, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                         Value="Vertical">
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Margin" Value="0,2,0,8" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ===================== APPS FIXADOS ===================== -->
+    <Style TargetType="Button"
+           x:Key="ToolbarButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Margin" Value="{DynamicResource TaskButtonMargin}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid Background="Transparent" Width="38" Height="32">
+                        <Border x:Name="Bg" CornerRadius="9" Background="Transparent" />
+                        <ContentPresenter x:Name="Icon" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,0,2" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatHover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatPressed}" />
+                            <Setter TargetName="Icon" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.86" ScaleY="0.86" /></Setter.Value></Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Image"
+           x:Key="ToolbarIcon"
+           BasedOn="{StaticResource DefaultDirection}">
+        <Setter Property="Width" Value="22" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality" />
+    </Style>
+
+    <Style TargetType="ItemsControl"
+           x:Key="ToolbarItems">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <Style TargetType="Thumb"
+           x:Key="ToolbarThumb">
+        <Setter Property="Visibility" Value="Collapsed" />
+    </Style>
+
+    <!-- ===================== BOTÕES DOS APPS ABERTOS ===================== -->
+    <Style TargetType="Button"
+           x:Key="TaskButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource FloatForeground}" />
+        <Setter Property="Margin" Value="{DynamicResource TaskButtonMargin}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid Background="Transparent" Height="32" VerticalAlignment="Center">
+                        <Border x:Name="Bg"
+                                CornerRadius="9"
+                                Background="{TemplateBinding Background}" />
+                        <ContentPresenter x:Name="Icon" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,0,2" />
+                        <Border x:Name="Indicator"
+                                Width="4"
+                                Height="2.5"
+                                CornerRadius="1.25"
+                                Background="{DynamicResource FloatMuted}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Margin="0,0,0,0.5" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatHover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatPressed}" />
+                            <Setter TargetName="Icon" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.86" ScaleY="0.86" /></Setter.Value></Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Path=Orientation, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                         Value="Vertical">
+                <Setter Property="Margin" Value="{DynamicResource TaskButtonVerticalMargin}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="Button"
+           x:Key="TaskButtonActive"
+           BasedOn="{StaticResource TaskButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid Background="Transparent" Height="32" VerticalAlignment="Center">
+                        <Border x:Name="Bg"
+                                CornerRadius="9"
+                                Background="{DynamicResource FloatActive}" />
+                        <ContentPresenter x:Name="Icon" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,0,2" />
+                        <!-- Marquinha do app ativo: estica ao ativar -->
+                        <Border Width="14"
+                                Height="2.5"
+                                CornerRadius="1.25"
+                                Background="{DynamicResource FloatAccent}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Margin="0,0,0,0.5">
+                            <Border.Triggers>
+                                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Width" From="4" To="14" Duration="0:0:0.3">
+                                                <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.5" /></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Border.Triggers>
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatHover}" />
+                            <Setter TargetName="Icon" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.86" ScaleY="0.86" /></Setter.Value></Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Button"
+           x:Key="TaskButtonFlashing"
+           BasedOn="{StaticResource TaskButton}">
+        <Setter Property="Background" Value="{DynamicResource FloatFlashing}" />
+    </Style>
+
+    <Style TargetType="ContentControl"
+           x:Key="TaskButtonThumbnail">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Border Background="{DynamicResource ToolTipBackground}"
+                            BorderBrush="{DynamicResource FloatBorder}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="8"
+                            Margin="4"
+                            TextElement.Foreground="{DynamicResource FloatForeground}">
+                        <ContentPresenter />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Image"
+           x:Key="TaskIcon"
+           BasedOn="{StaticResource DefaultDirection}">
+        <Setter Property="Width" Value="22" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality" />
+    </Style>
+
+    <Style TargetType="Image"
+           x:Key="TaskOverlayIcon"
+           BasedOn="{StaticResource DefaultDirection}">
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Setter Property="Margin" Value="0,0,-4,-3" />
+    </Style>
+
+    <!-- Só ícones, sem o nome da janela (o nome aparece no tooltip) -->
+    <Style TargetType="TextBlock"
+           x:Key="TaskLabel"
+           BasedOn="{StaticResource GlobalFonts}">
+        <Setter Property="Visibility" Value="Collapsed" />
+    </Style>
+
+    <Style x:Key="TaskListWrapPanel"
+           TargetType="WrapPanel">
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- A barra compacta nunca rola; sem a área de rolagem os ícones podem crescer para fora sem serem cortados -->
+    <Style x:Key="TaskListScrollViewer"
+           TargetType="ScrollViewer">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                    <ContentPresenter Content="{TemplateBinding Content}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===================== BANDEJA ===================== -->
+    <Style TargetType="GroupBox"
+           x:Key="Tray">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GroupBox">
+                    <Border x:Name="TrayBorder"
+                            BorderThickness="1,0,0,0"
+                            BorderBrush="{DynamicResource FloatDivider}"
+                            Margin="6,6,0,6"
+                            Padding="4,0,0,0">
+                        <ContentPresenter x:Name="TrayContent" VerticalAlignment="Center" Margin="0,-6" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Path=Orientation, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                     Value="Vertical">
+                            <Setter TargetName="TrayBorder" Property="BorderThickness" Value="0,1,0,0" />
+                            <Setter TargetName="TrayBorder" Property="Margin" Value="8,6,8,0" />
+                            <Setter TargetName="TrayBorder" Property="Padding" Value="0,4,0,0" />
+                            <Setter TargetName="TrayContent" Property="Margin" Value="-8,0" />
+                            <Setter TargetName="TrayContent" Property="HorizontalAlignment" Value="Center" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Image"
+           x:Key="NotifyIcon"
+           BasedOn="{StaticResource TaskIcon}">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Margin" Value="5,0" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Path=Orientation, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                         Value="Vertical">
+                <Setter Property="Margin" Value="3,4" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Setinha pra cima que abre os ícones em segundo plano -->
+    <Style TargetType="ToggleButton"
+           x:Key="TrayToggleButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Margin" Value="0,0,2,0" />
+        <Setter Property="ToolTip" Value="{DynamicResource show_hidden}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bg"
+                            Width="26"
+                            Height="30"
+                            CornerRadius="8"
+                            Background="Transparent">
+                        <Path x:Name="Chevron"
+                              Data="M 0,5 L 4.5,0.5 L 9,5"
+                              Stroke="{DynamicResource FloatForeground}"
+                              StrokeThickness="1.6"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              RenderTransformOrigin="0.5,0.5" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatHover}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatActive}" />
+                            <Setter TargetName="Chevron" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleY="-1" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="ToolTip" Value="{x:Null}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Painel que abre com a setinha -->
+    <Style TargetType="Border"
+           x:Key="TrayOverflowBorder">
+        <Setter Property="Background" Value="{DynamicResource FloatPopupBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource FloatBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="8,4" />
+    </Style>
+
+    <!-- ===================== RELÓGIO ===================== -->
+    <Style TargetType="TextBlock"
+           x:Key="Clock">
+        <Setter Property="FontFamily" Value="{DynamicResource FloatFont}" />
+        <Setter Property="Foreground" Value="{DynamicResource ClockForeground}" />
+        <Setter Property="TextAlignment" Value="Right" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
+    </Style>
+
+    <ControlTemplate TargetType="{x:Type UserControl}"
+                     x:Key="ClockTemplateKey">
+        <Border x:Name="ClockBg"
+                CornerRadius="8"
+                Padding="8,0"
+                Margin="2,0,0,0"
+                Height="32"
+                Background="Transparent">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Style="{DynamicResource Clock}"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Text="{Binding Path=Now, StringFormat={}{0:HH:mm}, Mode=OneWay}"
+                           Name="ClockText" />
+                <TextBlock Style="{DynamicResource Clock}"
+                           x:Name="DateText"
+                           FontSize="10.5"
+                           Foreground="{DynamicResource FloatMuted}"
+                           Margin="0,-1,0,0"
+                           Text="{Binding Path=Now, StringFormat={}{0:dd/MM/yyyy}, Mode=OneWay}" />
+            </StackPanel>
+        </Border>
+        <ControlTemplate.Triggers>
+            <DataTrigger Binding="{Binding Path=Orientation, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                         Value="Vertical">
+                <Setter TargetName="DateText" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="ClockBg" Property="Padding" Value="2,0" />
+                <Setter TargetName="ClockBg" Property="Margin" Value="0,2,0,0" />
+                <Setter TargetName="ClockText" Property="TextAlignment" Value="Center" />
+            </DataTrigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="ClockBg" Property="Background" Value="{DynamicResource FloatHover}" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- ===================== PAINÉIS (volume, rede, calendário) ===================== -->
+    <!-- Painéis próprios que abrem em cima do ícone clicado, no lugar dos do Windows -->
+    <system:Boolean x:Key="SarttFlyouts">True</system:Boolean>
+
+    <Style TargetType="Border" x:Key="FlyoutPanel">
+        <Setter Property="Background" Value="{DynamicResource FloatPopupBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource FloatBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="16,14" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource FloatForeground}" />
+        <Setter Property="TextElement.FontFamily" Value="{DynamicResource FloatFont}" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Opacity="0.45" Color="Black" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="TextBlock" x:Key="FlyoutTitle">
+        <Setter Property="FontFamily" Value="{DynamicResource BrandFont}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{DynamicResource FloatForeground}" />
+    </Style>
+
+    <Style TargetType="TextBlock" x:Key="FlyoutText">
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Foreground" Value="{DynamicResource FloatForeground}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style TargetType="TextBlock" x:Key="FlyoutMuted" BasedOn="{StaticResource FlyoutText}">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Foreground" Value="{DynamicResource FloatMuted}" />
+    </Style>
+
+    <Style TargetType="TextBlock" x:Key="FlyoutGlyph">
+        <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="Foreground" Value="{DynamicResource FloatForeground}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Botão redondo de ícone (mudo, setas do calendário) -->
+    <Style TargetType="Button" x:Key="FlyoutIconButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="34" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="10" Background="{DynamicResource FloatHover}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatActive}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatPressed}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Linha clicável (dispositivos de saída, atalhos) -->
+    <Style TargetType="Button" x:Key="FlyoutListButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="0,2" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="9" Background="Transparent" Padding="10,8">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatHover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatPressed}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Dia do calendário -->
+    <Style TargetType="Button" x:Key="FlyoutDayButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="34" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource FloatForeground}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="9" Background="{TemplateBinding Background}" Margin="1">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatHover}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Controle deslizante do volume -->
+    <Style TargetType="RepeatButton" x:Key="FlyoutSliderFill">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Height="4" CornerRadius="2" Background="{DynamicResource FloatAccent}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="RepeatButton" x:Key="FlyoutSliderRest">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Height="4" CornerRadius="2" Background="{DynamicResource FloatActive}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="Slider" x:Key="FlyoutSlider">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsMoveToPointEnabled" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid Height="22" Background="Transparent">
+                        <Track x:Name="PART_Track" VerticalAlignment="Center">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{DynamicResource FlyoutSliderFill}" Command="Slider.DecreaseLarge" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{DynamicResource FlyoutSliderRest}" Command="Slider.IncreaseLarge" />
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Ellipse x:Name="Knob" Width="16" Height="16" Fill="{DynamicResource FloatAccent}"
+                                                     RenderTransformOrigin="0.5,0.5">
+                                                <Ellipse.RenderTransform>
+                                                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                                                </Ellipse.RenderTransform>
+                                            </Ellipse>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Knob" Property="RenderTransform">
+                                                        <Setter.Value>
+                                                            <ScaleTransform ScaleX="1.2" ScaleY="1.2" />
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===================== MOSTRAR ÁREA DE TRABALHO ===================== -->
+    <!-- Tracinho no fim da barra: clique para ir à área de trabalho -->
+    <Style TargetType="ToggleButton"
+           x:Key="ShowDesktopButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Margin" Value="2,0,0,0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bg"
+                            Width="14"
+                            Height="32"
+                            CornerRadius="7"
+                            Background="Transparent">
+                        <Border x:Name="Bar"
+                                Width="2"
+                                Height="16"
+                                CornerRadius="1"
+                                Background="{DynamicResource FloatDivider}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource FloatHover}" />
+                            <Setter TargetName="Bar" Property="Background" Value="{DynamicResource FloatMuted}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bar" Property="Background" Value="{DynamicResource FloatAccent}" />
+                        </Trigger>
+                        <DataTrigger Binding="{Binding Path=Orientation, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                     Value="Vertical">
+                            <Setter TargetName="Bg" Property="Width" Value="32" />
+                            <Setter TargetName="Bg" Property="Height" Value="14" />
+                            <Setter TargetName="Bar" Property="Width" Value="16" />
+                            <Setter TargetName="Bar" Property="Height" Value="2" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

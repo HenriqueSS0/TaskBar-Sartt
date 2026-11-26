@@ -39,16 +39,59 @@ namespace RetroBar.Controls
             InitializeComponent();
         }
 
+        private DateTime _overflowClosedAt = DateTime.MinValue;
+
+        private static bool UsesOverflowPopup()
+        {
+            return Application.Current.TryFindResource("TrayOverflowPopup") is bool popup && popup;
+        }
+
+        private static bool ShouldCollapse()
+        {
+            return Settings.Instance.CollapseNotifyIcons || UsesOverflowPopup();
+        }
+
         private bool IsCollapsed()
         {
+            if (UsesOverflowPopup())
+            {
+                // Hidden icons live in the popup, so the bar only ever shows pinned icons.
+                return true;
+            }
+
             return Settings.Instance.CollapseNotifyIcons && NotifyIconToggleButton.IsChecked != true;
+        }
+
+        private void OverflowPopup_Opened(object sender, EventArgs e)
+        {
+            // Center the popup over the arrow, and flip it below for a top taskbar.
+            Taskbar host = Window.GetWindow(this) as Taskbar;
+            bool top = host != null && host.AppBarEdge == ManagedShell.AppBar.AppBarEdge.Top;
+            OverflowPopup.Placement = top ? System.Windows.Controls.Primitives.PlacementMode.Bottom : System.Windows.Controls.Primitives.PlacementMode.Top;
+            OverflowPopup.VerticalOffset = top ? 12 : -12;
+            OverflowPopup.HorizontalOffset = (NotifyIconToggleButton.ActualWidth - OverflowBorder.ActualWidth) / 2;
+        }
+
+        private void OverflowPopup_Closed(object sender, EventArgs e)
+        {
+            _overflowClosedAt = DateTime.Now;
+            NotifyIconToggleButton.IsChecked = false;
+        }
+
+        private void OverflowIcon_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Icons in the popup are in a separate visual tree, so they can't find the taskbar window themselves.
+            if (sender is NotifyIcon icon && icon.Host == null)
+            {
+                icon.Host = Window.GetWindow(this) as Taskbar;
+            }
         }
 
         private void Settings_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(Settings.CollapseNotifyIcons))
+            if (e.PropertyName == nameof(Settings.CollapseNotifyIcons) || e.PropertyName == nameof(Settings.Theme))
             {
-                if (Settings.Instance.CollapseNotifyIcons)
+                if (ShouldCollapse())
                 {
                     SetToggleVisibility();
                 }
@@ -83,8 +126,9 @@ namespace RetroBar.Controls
                 collectionViewShaping.LiveFilteringProperties.Add("IsHidden");
                 collectionViewShaping.LiveFilteringProperties.Add("IsPinned");
                 NotifyIcons.ItemsSource = collectionView;
+                OverflowIcons.ItemsSource = NotificationArea.UnpinnedIcons;
 
-                if (Settings.Instance.CollapseNotifyIcons)
+                if (ShouldCollapse())
                 {
                     SetToggleVisibility();
                 }
@@ -212,12 +256,25 @@ namespace RetroBar.Controls
 
         private void NotifyIconToggleButton_OnClick(object sender, RoutedEventArgs e)
         {
+            if (UsesOverflowPopup())
+            {
+                if ((DateTime.Now - _overflowClosedAt).TotalMilliseconds < 300)
+                {
+                    // This click is the one that just closed the popup (StaysOpen=False); don't reopen it.
+                    NotifyIconToggleButton.IsChecked = false;
+                    return;
+                }
+
+                OverflowPopup.IsOpen = NotifyIconToggleButton.IsChecked == true;
+                return;
+            }
+
             collectionView?.Refresh();
         }
 
         private void SetToggleVisibility()
         {
-            if (!Settings.Instance.CollapseNotifyIcons) return;
+            if (!ShouldCollapse()) return;
 
             if (NotificationArea.UnpinnedIcons.IsEmpty)
             {

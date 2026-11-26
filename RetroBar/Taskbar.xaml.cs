@@ -1,4 +1,4 @@
-using ManagedShell;
+﻿using ManagedShell;
 using ManagedShell.AppBar;
 using ManagedShell.Common.Helpers;
 using ManagedShell.Common.Logging;
@@ -33,6 +33,17 @@ namespace RetroBar
             get => (bool)GetValue(HasMaximizedWindowProperty);
             private set => SetValue(HasMaximizedWindowProperty, value);
         }
+        public static readonly DependencyProperty IsDraggingProperty =
+            DependencyProperty.Register("IsDragging", typeof(bool), typeof(Taskbar),
+                new PropertyMetadata(false));
+
+        // True while the user is dragging a free-floating taskbar; themes use it for feedback.
+        public bool IsDragging
+        {
+            get => (bool)GetValue(IsDraggingProperty);
+            private set => SetValue(IsDraggingProperty, value);
+        }
+
         public bool IsLocked => Settings.Instance.LockTaskbar;
         public bool IsScaled => DpiScale > 1 || Settings.Instance.TaskbarScale > 1;
 
@@ -111,6 +122,47 @@ namespace RetroBar
             AutoHideElement = TaskbarContentControl;
 
             PropertyChanged += Taskbar_PropertyChanged;
+            _dockMagnifier = new DockMagnifier(this);
+            ContentRendered += (_, _) =>
+            {
+                ApplyDockPosition();
+                PlayAppearAnimation();
+
+                // Keep the remembered spot as the bar grows or shrinks with open apps.
+                if (GetPillElement() is FrameworkElement pill)
+                {
+                    pill.SizeChanged += (_, args) =>
+                    {
+                        bool lengthChanged = Orientation == Orientation.Horizontal ? args.WidthChanged : args.HeightChanged;
+                        if (lengthChanged && !IsDragging && !Settings.Instance.IsFreePosition && Settings.Instance.DockPosition >= 0)
+                        {
+                            Dispatcher.BeginInvoke(new Action(ApplyDockPosition), DispatcherPriority.Loaded);
+                        }
+                    };
+                }
+            };
+            LostMouseCapture += (_, _) =>
+            {
+                // Only a real loss (e.g. another window took the mouse) ends the drag.
+                if (_isManualDragging && !IsMouseCaptured && Mouse.LeftButton != MouseButtonState.Pressed)
+                {
+                    EndManualDrag();
+                }
+            };
+            MouseLeftButtonUp += (_, _) =>
+            {
+                if (_isManualDragging)
+                {
+                    EndManualDrag();
+                    return;
+                }
+
+                if (_freeDragStart != null)
+                {
+                    _freeDragStart = null;
+                    ReleaseMouseCapture();
+                }
+            };
 
             _startMenuMonitor.StartMenuVisibilityChanged += StartMenuMonitor_StartMenuVisibilityChanged;
             _shellManager.TasksService.WindowActivated += TasksService_WindowActivated;
@@ -159,9 +211,9 @@ namespace RetroBar
             {
                 bool newTransparency = AppBarMode == AppBarMode.AutoHide || (Application.Current.FindResource("AllowsTransparency") as bool? ?? false);
 
-                if (AllowsTransparency != newTransparency && Screen.Primary)
+                if ((AllowsTransparency != newTransparency || AppBarMode != WindowManager.GetAppBarMode()) && Screen.Primary)
                 {
-                    // Transparency cannot be changed on an open window.
+                    // Transparency cannot be changed on an open window; reopening also applies the theme's app bar mode.
                     windowManager.ReopenTaskbars();
                     return;
                 }
@@ -222,7 +274,7 @@ namespace RetroBar
 
                 if (AllowsTransparency == newTransparency)
                 {
-                    AppBarMode = Settings.Instance.AutoHide ? AppBarMode.AutoHide : AppBarMode.Normal;
+                    AppBarMode = WindowManager.GetAppBarMode();
                 }
                 else if (Screen.Primary)
                 {
@@ -329,6 +381,418 @@ namespace RetroBar
             HasMaximizedWindow = IsAnyWindowMaximizedOnThisScreen();
         }
 
+        #region Free placement
+        private Point? _freeDragStart;
+        private DockMagnifier _dockMagnifier;
+
+        private bool ThemeAllowsDrag =>
+            Application.Current.TryFindResource("AllowDragWhenLocked") is bool allowDrag && allowDrag;
+
+        // Free placement is only possible when the theme floats over windows (no reserved space).
+        private bool CanFreeFloat => AppBarMode == AppBarMode.None && ThemeAllowsDrag && Screen.Primary;
+
+        private bool IsFreeFloating => CanFreeFloat && Settings.Instance.IsFreePosition;
+
+        public override bool UpdatePosition()
+        {
+            if (IsFreeFloating)
+            {
+                if (IsDragging)
+                {
+                    // AppBarWindow calls this whenever the window moves; while dragging, the
+                    // cursor owns the position, so don't snap back to the saved spot.
+                    return true;
+                }
+
+                PositionFree();
+                return true;
+            }
+
+            if (SizeToContent != SizeToContent.Manual)
+            {
+                SizeToContent = SizeToContent.Manual;
+            }
+
+            bool result;
+            if (CanFreeFloat)
+            {
+                // Floating themes don't reserve screen space, and the app bar logic doesn't
+                // reliably resize the window then (it can keep the small size left over from free
+                // placement, showing a small bar in the corner). Place the edge strip ourselves.
+                SetDockedRect();
+                result = true;
+            }
+            else
+            {
+                result = base.UpdatePosition();
+            }
+
+            // Apply right away so the first frame already shows the bar at its spot (no flash of
+            // the centered layout), then again once layout settles in case sizes were stale.
+            ApplyDockPosition();
+            Dispatcher.BeginInvoke(new Action(ApplyDockPosition), DispatcherPriority.Loaded);
+            return result;
+        }
+
+        // The window as a full-length strip along the docked edge (in DIPs).
+        private void SetDockedRect()
+        {
+            double scale = ScreenScale;
+            double screenLeft = Screen.Bounds.Left / scale;
+            double screenTop = Screen.Bounds.Top / scale;
+            double screenWidth = Screen.Bounds.Width / scale;
+            double screenHeight = Screen.Bounds.Height / scale;
+
+            if (Orientation == Orientation.Horizontal)
+            {
+                Width = screenWidth;
+                Height = DesiredHeight;
+                Left = screenLeft;
+                Top = AppBarEdge == AppBarEdge.Top ? screenTop : screenTop + screenHeight - DesiredHeight;
+            }
+            else
+            {
+                Width = DesiredWidth;
+                Height = screenHeight;
+                Top = screenTop;
+                Left = AppBarEdge == AppBarEdge.Left ? screenLeft : screenLeft + screenWidth - DesiredWidth;
+            }
+        }
+
+        // Places the bar body at the remembered spot along the docked edge (instead of centered).
+        // Local values on the template's PillHost override the theme's per-edge setters.
+        private void ApplyDockPosition()
+        {
+            FrameworkElement pill = GetPillElement();
+            if (pill == null)
+            {
+                return;
+            }
+
+            pill.ClearValue(FrameworkElement.MarginProperty);
+            pill.ClearValue(FrameworkElement.HorizontalAlignmentProperty);
+            pill.ClearValue(FrameworkElement.VerticalAlignmentProperty);
+
+            double along = Settings.Instance.DockPosition;
+            if (!CanFreeFloat || Settings.Instance.IsFreePosition || along < 0)
+            {
+                return;
+            }
+
+            pill.UpdateLayout();
+            Thickness themeMargin = pill.Margin;
+
+            if (Orientation == Orientation.Horizontal)
+            {
+                double length = ActualWidth;
+                double size = pill.ActualWidth > 0 ? pill.ActualWidth : pill.DesiredSize.Width;
+                double start = along * length - size / 2;
+                start = Math.Max(themeMargin.Left, Math.Min(start, length - size - themeMargin.Right));
+                pill.HorizontalAlignment = HorizontalAlignment.Left;
+                pill.Margin = new Thickness(start, themeMargin.Top, 0, themeMargin.Bottom);
+            }
+            else
+            {
+                double length = ActualHeight;
+                double size = pill.ActualHeight > 0 ? pill.ActualHeight : pill.DesiredSize.Height;
+                double start = along * length - size / 2;
+                start = Math.Max(themeMargin.Top, Math.Min(start, length - size - themeMargin.Bottom));
+                pill.VerticalAlignment = VerticalAlignment.Top;
+                pill.Margin = new Thickness(themeMargin.Left, start, themeMargin.Right, 0);
+            }
+        }
+
+        private double ScreenScale => DpiScale > 0 ? DpiScale : 1;
+
+        // Places the window so its center sits at the saved fraction of the screen, sized to its content.
+        private void PositionFree()
+        {
+            if (SizeToContent != SizeToContent.Width)
+            {
+                SizeToContent = SizeToContent.Width;
+            }
+
+            Height = DesiredHeight;
+
+            double scale = ScreenScale;
+            double screenLeft = Screen.Bounds.Left / scale;
+            double screenTop = Screen.Bounds.Top / scale;
+            double screenWidth = Screen.Bounds.Width / scale;
+            double screenHeight = Screen.Bounds.Height / scale;
+            // SizeToContent resizes the window asynchronously, so ActualWidth can still be the old
+            // (docked, full-screen) width here. Position using the content's measured width instead.
+            double width = GetContentWidth();
+            double height = Height;
+
+            double left = screenLeft + Settings.Instance.FreePositionX * screenWidth - width / 2;
+            double top = screenTop + Settings.Instance.FreePositionY * screenHeight - height / 2;
+
+            // The bar may hang past the screen edges, but keep enough of it visible to grab it again.
+            const double minVisible = 120;
+            Left = Math.Max(screenLeft + minVisible - width, Math.Min(left, screenLeft + screenWidth - minVisible));
+            Top = Math.Max(screenTop, Math.Min(top, screenTop + screenHeight - height));
+        }
+
+        private void SaveFreePositionFromWindow()
+        {
+            double scale = ScreenScale;
+            double centerX = (Left + ActualWidth / 2) * scale;
+            double centerY = (Top + ActualHeight / 2) * scale;
+
+            Settings.Instance.FreePositionX = Math.Clamp((centerX - Screen.Bounds.Left) / Screen.Bounds.Width, 0, 1);
+            Settings.Instance.FreePositionY = Math.Clamp((centerY - Screen.Bounds.Top) / Screen.Bounds.Height, 0, 1);
+        }
+
+        // The point of the window (in DIPs) that stays under the cursor while dragging: the brand label.
+        private Point _dragHandle;
+        private bool _isManualDragging;
+
+        private void BeginFreeDrag()
+        {
+            // Set first: it stops the size-changed handler from re-centering the bar mid-setup.
+            IsDragging = true;
+
+            if (!Settings.Instance.IsFreePosition)
+            {
+                Settings.Instance.IsFreePosition = true;
+
+                if (Orientation == Orientation.Vertical)
+                {
+                    Settings.Instance.Edge = AppBarEdge.Bottom; // switches to the horizontal layout
+                }
+            }
+
+            // Drop the docked placement (bar body offset along the edge) before measuring.
+            ApplyDockPosition();
+
+            // Use a fixed size while dragging, so nothing resizes asynchronously under the pointer.
+            SizeToContent = SizeToContent.Manual;
+            UpdateLayout();
+            Width = GetContentWidth();
+            Height = DesiredHeight;
+            UpdateLayout();
+
+            // The bar is always held by its brand name (Sartt), wherever it was grabbed.
+            _dragHandle = GetDragHandleCenter(0.1);
+
+            IsDragging = true;
+            _isManualDragging = true;
+            MoveWithCursor();
+
+            if (!IsMouseCaptured)
+            {
+                CaptureMouse();
+            }
+
+            // Follow the cursor on a timer too, so fast moves never leave the bar behind,
+            // whether or not mouse events keep arriving.
+            _dragTimer ??= new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(15) };
+            _dragTimer.Tick -= DragTimer_Tick;
+            _dragTimer.Tick += DragTimer_Tick;
+            _dragTimer.Start();
+        }
+
+        private DispatcherTimer _dragTimer;
+
+        private void DragTimer_Tick(object sender, EventArgs e)
+        {
+            const int VK_LBUTTON = 0x01;
+            if (NativeMethods.GetAsyncKeyState(VK_LBUTTON) < 0)
+            {
+                MoveWithCursor();
+            }
+            else
+            {
+                EndManualDrag();
+            }
+        }
+
+        private void MoveWithCursor()
+        {
+            var cursor = System.Windows.Forms.Cursor.Position;
+            double scale = ScreenScale;
+            Left = cursor.X / scale - _dragHandle.X;
+            Top = cursor.Y / scale - _dragHandle.Y;
+        }
+
+        private void EndManualDrag()
+        {
+            if (!_isManualDragging)
+            {
+                return;
+            }
+
+            _isManualDragging = false;
+            _dragTimer?.Stop();
+
+            if (IsMouseCaptured)
+            {
+                ReleaseMouseCapture();
+            }
+
+            // IsDragging stays true until EndFreeDrag has decided where the bar goes: while it's
+            // true, reposition requests are ignored, so nothing can move the bar for a frame in
+            // between (e.g. to a saved spot clamped inside the screen).
+            EndFreeDrag();
+        }
+
+        // Width the window will have once sized to its content.
+        private double GetContentWidth()
+        {
+            TaskbarContentControl.Measure(new Size(double.PositiveInfinity, DesiredHeight));
+            double width = TaskbarContentControl.DesiredSize.Width;
+            return width > 0 ? width : ActualWidth;
+        }
+
+        // Center of the drag handle (the brand label), relative to the window as it will be once
+        // sized to its content: measured from the bar body, which then starts at its left margin.
+        private Point GetDragHandleCenter(double fallbackFraction)
+        {
+            FrameworkElement pill = GetPillElement();
+            if (pill == null || pill.ActualWidth <= 0)
+            {
+                return new Point(GetContentWidth() / 2, DesiredHeight / 2);
+            }
+
+            Point inPill = BrandLabel.IsVisible && BrandLabel.ActualWidth > 0
+                ? BrandLabel.TranslatePoint(new Point(BrandLabel.ActualWidth / 2, BrandLabel.ActualHeight / 2), pill)
+                : new Point(fallbackFraction * pill.ActualWidth, pill.ActualHeight / 2);
+
+            return new Point(pill.Margin.Left + inPill.X, pill.Margin.Top + inPill.Y);
+        }
+
+        // Themes opt in with "AnimateAppear": the bar body grows in and fades in when the taskbar
+        // opens and when it lands on a new edge.
+        public void PlayAppearAnimation()
+        {
+            if (!(Application.Current.TryFindResource("AnimateAppear") is bool animate && animate))
+            {
+                return;
+            }
+
+            FrameworkElement pill = GetPillElement();
+            if (pill == null)
+            {
+                return;
+            }
+
+            if (pill.RenderTransform is not System.Windows.Media.ScaleTransform scaleTransform || scaleTransform.IsFrozen)
+            {
+                scaleTransform = new System.Windows.Media.ScaleTransform(1, 1);
+                pill.RenderTransform = scaleTransform;
+            }
+
+            pill.RenderTransformOrigin = new Point(0.5, 0.5);
+
+            var duration = new Duration(TimeSpan.FromMilliseconds(380));
+            var ease = new System.Windows.Media.Animation.BackEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut, Amplitude = 0.45 };
+
+            scaleTransform.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty,
+                new System.Windows.Media.Animation.DoubleAnimation(0.82, 1, duration) { EasingFunction = ease });
+            scaleTransform.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty,
+                new System.Windows.Media.Animation.DoubleAnimation(0.82, 1, duration) { EasingFunction = ease });
+            pill.BeginAnimation(OpacityProperty,
+                new System.Windows.Media.Animation.DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(220))));
+        }
+
+        // After docking (especially when switching between horizontal and vertical), the task
+        // buttons take a few layout passes to reach their final size. Keep the body hidden until
+        // its size stops changing, place it, then reveal it with the landing animation; revealing
+        // earlier shows it moving as it settles.
+        private void RevealWhenSettled(FrameworkElement pill)
+        {
+            if (pill == null)
+            {
+                PlayAppearAnimation();
+                return;
+            }
+
+            Size lastSize = Size.Empty;
+            int stableTicks = 0;
+            int totalTicks = 0;
+            var timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(25) };
+            timer.Tick += (_, _) =>
+            {
+                UpdateLayout();
+                ApplyDockPosition();
+                UpdateLayout();
+
+                Size size = new Size(Math.Round(pill.ActualWidth), Math.Round(pill.ActualHeight));
+                stableTicks = size == lastSize && size.Width > 0 ? stableTicks + 1 : 0;
+                lastSize = size;
+                totalTicks++;
+
+                if (stableTicks >= 2 || totalTicks >= 16)
+                {
+                    timer.Stop();
+                    pill.Visibility = Visibility.Visible;
+                    PlayAppearAnimation();
+                }
+            };
+            timer.Start();
+        }
+
+        private FrameworkElement GetPillElement()
+        {
+            return TaskbarContentControl.Template?.FindName("PillHost", TaskbarContentControl) as FrameworkElement;
+        }
+
+        private void EndFreeDrag()
+        {
+            // Dropped against an edge: dock there. Anywhere else: stay where it was dropped.
+            var cursor = System.Windows.Forms.Cursor.Position;
+            var bounds = Screen.Bounds;
+            int snap = (int)(40 * ScreenScale);
+            AppBarEdge? edge = null;
+
+            // The shape only changes on drop, never while the bar is being held and moved.
+            if (cursor.Y >= bounds.Bottom - snap) edge = AppBarEdge.Bottom;
+            else if (cursor.Y <= bounds.Top + snap) edge = AppBarEdge.Top;
+            else if (cursor.X <= bounds.Left + snap) edge = AppBarEdge.Left;
+            else if (cursor.X >= bounds.Right - snap) edge = AppBarEdge.Right;
+
+            if (edge is AppBarEdge newEdge)
+            {
+                // Remember where along the edge it was dropped, so it doesn't jump to the center.
+                var bounds2 = Screen.Bounds;
+                bool horizontalEdge = newEdge == AppBarEdge.Top || newEdge == AppBarEdge.Bottom;
+                double scale = ScreenScale;
+                double centerX = (Left + ActualWidth / 2) * scale;
+                Settings.Instance.DockPosition = horizontalEdge
+                    ? Math.Clamp((centerX - bounds2.Left) / bounds2.Width, 0, 1)
+                    : Math.Clamp((double)(cursor.Y - bounds2.Top) / bounds2.Height, 0, 1);
+
+                // Keep the body hidden (Visibility, which no opacity animation can override) while
+                // the window switches from floating to docked, and reveal it only once it sits at
+                // its final spot; otherwise a frame of the centered layout flashes on screen.
+                FrameworkElement landingPill = GetPillElement();
+                if (landingPill != null)
+                {
+                    landingPill.Visibility = Visibility.Hidden;
+                }
+
+                Settings.Instance.IsFreePosition = false;
+                if (Settings.Instance.Edge != newEdge)
+                {
+                    Settings.Instance.Edge = newEdge; // repositions via the Edge setting handler
+                }
+                else
+                {
+                    UpdatePosition();
+                }
+
+                IsDragging = false;
+                RevealWhenSettled(landingPill);
+                return;
+            }
+
+            SaveFreePositionFromWindow();
+            IsDragging = false;
+            PositionFree(); // pull it back on screen if it was dropped partly outside
+            SaveFreePositionFromWindow();
+        }
+        #endregion
+
         #region AppBarWindow overrides
         protected override void OnSourceInitialized(object sender, EventArgs e)
         {
@@ -337,6 +801,26 @@ namespace RetroBar
             SetLayoutRounding();
             SetBlur(AllowsBlur());
             UpdateTrayPosition();
+            ReleaseWorkAreaIfFloating();
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SystemParametersInfo(uint uiAction, uint uiParam, ref NativeMethods.Rect pvParam, uint fWinIni);
+
+        private void ReleaseWorkAreaIfFloating()
+        {
+            if (AppBarMode != AppBarMode.None)
+            {
+                return;
+            }
+
+            // When floating over windows, maximized apps should use the full screen. Clear any
+            // work area reservation left behind (e.g. by a previous instance that didn't exit cleanly).
+            var bounds = Screen.Bounds;
+            var rect = new NativeMethods.Rect(bounds.Left, bounds.Top, bounds.Right, bounds.Bottom);
+            const uint SPI_SETWORKAREA = 0x002F;
+            const uint SPIF_SENDCHANGE = 0x2;
+            SystemParametersInfo(SPI_SETWORKAREA, 0, ref rect, SPIF_SENDCHANGE);
         }
             
         protected override IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -439,8 +923,31 @@ namespace RetroBar
             }
         }
         
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool IsZoomed(IntPtr hWnd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        // When floating over windows, an ordinary maximized window covers the whole screen and
+        // looks "full screen". Only real full-screen apps (no title bar, e.g. games, videos)
+        // should push the taskbar behind them.
+        private bool IsMaximizedNotFullScreen(FullScreenApp app)
+        {
+            const int GWL_STYLE = -16;
+            const int WS_CAPTION = 0x00C00000;
+            return AppBarMode == AppBarMode.None &&
+                   IsZoomed(app.hWnd) &&
+                   (GetWindowLong(app.hWnd, GWL_STYLE) & WS_CAPTION) == WS_CAPTION;
+        }
+
         protected override void OnFullScreenEnter(FullScreenApp app)
         {
+            if (IsMaximizedNotFullScreen(app))
+            {
+                return;
+            }
+
             base.OnFullScreenEnter(app);
             StartButton?.UpdateFloatingStartTopmost(false);
         }
@@ -469,6 +976,12 @@ namespace RetroBar
 
         private void Taskbar_OnSizeChanged(object sender, SizeChangedEventArgs e)
         {
+            if (IsFreeFloating && !IsDragging && e.WidthChanged)
+            {
+                // Grow/shrink around the saved center as apps open and close.
+                PositionFree();
+            }
+
             UpdateTrayPosition();
             StartButton?.UpdateFloatingStartCoordinates();
         }
@@ -487,6 +1000,10 @@ namespace RetroBar
         #region Context menu
         private void ContextMenu_Opened(object sender, RoutedEventArgs e)
         {
+            Visibility positionVisibility = CanFreeFloat ? Visibility.Visible : Visibility.Collapsed;
+            PositionMenuItem.Visibility = positionVisibility;
+            PositionMenuSeparator.Visibility = positionVisibility;
+
             if (_updater.IsUpdateAvailable)
             {
                 UpdateAvailableMenuItem.Visibility = Visibility.Visible;
@@ -500,6 +1017,51 @@ namespace RetroBar
             {
                 RestartMenuItem.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private void DockMenuItem_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem item || item.Tag is not string target)
+            {
+                return;
+            }
+
+            AppBarEdge edge = target switch
+            {
+                "Top" => AppBarEdge.Top,
+                "Left" => AppBarEdge.Left,
+                "Right" => AppBarEdge.Right,
+                "Bottom" => AppBarEdge.Bottom,
+                // Center on the current edge (bottom when it's floating freely).
+                _ => Settings.Instance.IsFreePosition ? AppBarEdge.Bottom : Settings.Instance.Edge,
+            };
+
+            DockTo(edge, -1);
+        }
+
+        // Docks to an edge at a spot along it (negative = centered), hidden until it has settled
+        // there and then revealed with the landing animation.
+        private void DockTo(AppBarEdge edge, double along)
+        {
+            FrameworkElement pill = GetPillElement();
+            if (pill != null)
+            {
+                pill.Visibility = Visibility.Hidden;
+            }
+
+            Settings.Instance.DockPosition = along;
+            Settings.Instance.IsFreePosition = false;
+
+            if (Settings.Instance.Edge != edge)
+            {
+                Settings.Instance.Edge = edge; // repositions via the Edge setting handler
+            }
+            else
+            {
+                UpdatePosition();
+            }
+
+            RevealWhenSettled(pill);
         }
 
         private void SetTimeMenuItem_OnClick(object sender, RoutedEventArgs e)
@@ -536,7 +1098,7 @@ namespace RetroBar
 
         private void ExitMenuItem_OnClick(object sender, RoutedEventArgs e)
         {
-            ((App)Application.Current).ExitGracefully();
+            ((App)Application.Current).ExitByUser();
         }
 
         private void RestartMenuItem_Click(object sender, RoutedEventArgs e)
@@ -679,9 +1241,19 @@ namespace RetroBar
         #region Unlocked taskbar drag hook
         private void Taskbar_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (!IsLocked)
+            if (CanFreeFloat)
             {
-                // Start low-level mouse hook to receive current drag position
+                // Wait for real movement before undocking, so a plain click does nothing.
+                // Capture so moves are still seen if the pointer leaves the thin bar quickly.
+                _freeDragStart = e.GetPosition(this);
+                CaptureMouse();
+                return;
+            }
+
+            if (!IsLocked || ThemeAllowsDrag)
+            {
+                // Start low-level mouse hook to receive current drag position.
+                // When locked, IsMouseInResizeArea is false, so this only moves between edges.
                 // The hook should be stopped upon mouse up
                 StartMouseDragHook();
             }
@@ -890,6 +1462,41 @@ namespace RetroBar
 
         private void Taskbar_MouseMove(object sender, MouseEventArgs e)
         {
+            if (_isManualDragging)
+            {
+                if (e.LeftButton == MouseButtonState.Pressed)
+                {
+                    MoveWithCursor();
+                }
+                else
+                {
+                    EndManualDrag();
+                }
+                return;
+            }
+
+            if (_freeDragStart is Point start)
+            {
+                if (e.LeftButton != MouseButtonState.Pressed)
+                {
+                    _freeDragStart = null;
+                    ReleaseMouseCapture();
+                }
+                else
+                {
+                    Vector moved = e.GetPosition(this) - start;
+                    if (Math.Abs(moved.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                        Math.Abs(moved.Y) > SystemParameters.MinimumVerticalDragDistance)
+                    {
+                        // Keep the capture from the mouse press: releasing and re-capturing here
+                        // raises a late LostMouseCapture that would cancel the drag right away.
+                        _freeDragStart = null;
+                        BeginFreeDrag();
+                    }
+                    return;
+                }
+            }
+
             // Show resize cursor for resizable taskbars
             if (IsMouseInResizeArea() || _mouseDragResize)
             {

@@ -22,6 +22,34 @@
                       Visibility="Collapsed"
                       Click="NotifyIconToggleButton_OnClick"
                       Style="{DynamicResource TrayToggleButton}"/>
+        <Popup x:Name="OverflowPopup"
+               PlacementTarget="{Binding ElementName=NotifyIconToggleButton}"
+               Placement="Top"
+               StaysOpen="False"
+               AllowsTransparency="True"
+               PopupAnimation="Slide"
+               Opened="OverflowPopup_Opened"
+               Closed="OverflowPopup_Closed">
+            <Border x:Name="OverflowBorder"
+                    Style="{DynamicResource TrayOverflowBorder}">
+                <ItemsControl x:Name="OverflowIcons"
+                              Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"
+                                       MaxWidth="150"
+                                       Background="Transparent" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <ItemContainerTemplate>
+                            <local:NotifyIcon Loaded="OverflowIcon_Loaded"
+                                              Margin="2,5" />
+                        </ItemContainerTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+        </Popup>
         <ItemsControl x:Name="NotifyIcons"
                       Focusable="False"
                       Style="{DynamicResource NotifyIconItems}"

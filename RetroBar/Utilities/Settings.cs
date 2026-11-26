@@ -86,11 +86,44 @@ namespace RetroBar.Utilities
             set => Set(ref _language, value);
         }
 
-        private string _theme = "Windows 95-98";
+        private string _theme = "Flutuante";
         public string Theme
         {
             get => _theme;
             set => Set(ref _theme, value);
+        }
+
+        // Free placement (themes with FloatOverWindows): when true, the taskbar is placed at
+        // FreePositionX/Y instead of docked to an edge. Values are the taskbar's center as a
+        // fraction of the screen (0..1).
+        private bool _isFreePosition = false;
+        public bool IsFreePosition
+        {
+            get => _isFreePosition;
+            set => Set(ref _isFreePosition, value);
+        }
+
+        private double _freePositionX = 0.5;
+        public double FreePositionX
+        {
+            get => _freePositionX;
+            set => Set(ref _freePositionX, value);
+        }
+
+        private double _freePositionY = 0.9;
+        public double FreePositionY
+        {
+            get => _freePositionY;
+            set => Set(ref _freePositionY, value);
+        }
+
+        // Where along the docked edge the taskbar body sits (its center, as a fraction of the
+        // edge length). Negative means centered. Used by themes with FloatOverWindows.
+        private double _dockPosition = -1;
+        public double DockPosition
+        {
+            get => _dockPosition;
+            set => Set(ref _dockPosition, value);
         }
 
         private bool _showInputLanguage = false;
@@ -192,7 +225,7 @@ namespace RetroBar.Utilities
             }
         }
 
-        private bool _showDesktopButton = false;
+        private bool _showDesktopButton = true;
         public bool ShowDesktopButton
         {
             get => _showDesktopButton;
@@ -277,7 +310,7 @@ namespace RetroBar.Utilities
             set => Set(ref _notifyIconOrder, value);
         }
 
-        private bool _allowFontSmoothing = false;
+        private bool _allowFontSmoothing = true;
         public bool AllowFontSmoothing
         {
             get => _allowFontSmoothing;
@@ -340,7 +373,7 @@ namespace RetroBar.Utilities
             set => Set(ref _quickLaunchOrder, value);
         }
 
-        private bool _showTaskThumbnails = false;
+        private bool _showTaskThumbnails = true;
         public bool ShowTaskThumbnails
         {
             get => _showTaskThumbnails;
@@ -375,7 +408,7 @@ namespace RetroBar.Utilities
             set => Set(ref _autoHide, value);
         }
 
-        private bool _lockTaskbar = false;
+        private bool _lockTaskbar = true;
         public bool LockTaskbar
         {
             get => _lockTaskbar;
@@ -410,7 +443,7 @@ namespace RetroBar.Utilities
             set => SetEnum(ref _taskWheelAction, value);
         }
 
-        private ClockClickOption _clockClickAction = EnvironmentHelper.IsWindows10OrBetter ? ClockClickOption.OpenNotificationCenter : ClockClickOption.DoNothing;
+        private ClockClickOption _clockClickAction = EnvironmentHelper.IsWindows10OrBetter ? ClockClickOption.OpenModernCalendar : ClockClickOption.DoNothing;
         public ClockClickOption ClockClickAction
         {
             get
@@ -482,7 +515,7 @@ namespace RetroBar.Utilities
             set => SetEnum(ref _winNumHotkeysAction, value);
         }
 
-        private bool _allowBlurBehind = true;
+        private bool _allowBlurBehind = false;
         public bool AllowBlurBehind
         {
             get => _allowBlurBehind;

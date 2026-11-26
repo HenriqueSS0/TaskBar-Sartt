@@ -59,6 +59,35 @@
     <system:Boolean x:Key="UseLargeIcons">False</system:Boolean>
     <system:Boolean x:Key="UseFloatingStartButton">False</system:Boolean>
 
+    <!-- Compact layout: the taskbar body sizes to its content and pinned apps hide while running -->
+    <system:Boolean x:Key="CompactTaskbar">False</system:Boolean>
+    <!-- Width kept free for start button, label, tray and clock when computing task button widths in compact mode -->
+    <system:Double x:Key="CompactReservedWidth">480</system:Double>
+    <!-- Hidden notification icons open in a popup instead of expanding inline -->
+    <system:Boolean x:Key="TrayOverflowPopup">False</system:Boolean>
+    <!-- Taskbar floats over windows instead of reserving screen space -->
+    <system:Boolean x:Key="FloatOverWindows">False</system:Boolean>
+    <!-- The taskbar can be dragged to another screen edge even while locked -->
+    <system:Boolean x:Key="AllowDragWhenLocked">False</system:Boolean>
+
+    <Style TargetType="TextBlock"
+           x:Key="BrandLabel">
+        <Setter Property="Visibility"
+                Value="Collapsed" />
+    </Style>
+
+    <Style TargetType="Border"
+           x:Key="TrayOverflowBorder">
+        <Setter Property="Background"
+                Value="{DynamicResource ButtonFace}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource ButtonDarkShadow}" />
+        <Setter Property="BorderThickness"
+                Value="1" />
+        <Setter Property="Padding"
+                Value="4" />
+    </Style>
+
     <Style x:Key="GlobalFonts">
         <Setter Property="Control.FontFamily"
                 Value="{DynamicResource GlobalFontFamily}" />

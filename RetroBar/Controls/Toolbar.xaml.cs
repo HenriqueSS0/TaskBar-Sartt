@@ -84,6 +84,10 @@ namespace RetroBar.Controls
             {
                 Refresh();
             }
+            else if (e.PropertyName == nameof(Settings.Theme))
+            {
+                SetItemsSource();
+            }
         }
 
         private void Refresh()
@@ -116,8 +120,99 @@ namespace RetroBar.Controls
                 ToolbarItems.ItemsSource = Folder.Files;
                 ListCollectionView cvs = (ListCollectionView)CollectionViewSource.GetDefaultView(Folder.Files);
                 cvs.CustomSort = new ToolbarSorter(this);
+
+                if (IsCompactTheme())
+                {
+                    cvs.Filter = PinnedNotRunning_Filter;
+                }
+                else
+                {
+                    cvs.Filter = null;
+                }
             }
         }
+
+        #region Pinned apps merged with running tasks
+        private System.Collections.Specialized.INotifyCollectionChanged _watchedTasks;
+
+        private static bool IsCompactTheme()
+        {
+            return Application.Current.TryFindResource("CompactTaskbar") is bool compact && compact;
+        }
+
+        private System.Collections.IEnumerable GetRunningWindows()
+        {
+            return (Host?.DataContext as ManagedShell.ShellManager)?.Tasks?.GroupedWindows;
+        }
+
+        // In the compact theme, a pinned shortcut is hidden while its app has a window open,
+        // so the running button takes its place in the middle of the bar.
+        private bool PinnedNotRunning_Filter(object item)
+        {
+            if (item is not ShellFile file)
+            {
+                return true;
+            }
+
+            var windows = GetRunningWindows();
+            if (windows == null)
+            {
+                return true;
+            }
+
+            string target = ShortcutResolver.GetTargetPath(file.Path);
+            if (string.IsNullOrEmpty(target))
+            {
+                return true;
+            }
+
+            foreach (var obj in windows)
+            {
+                if (obj is ManagedShell.WindowsTasks.ApplicationWindow window &&
+                    window.ShowInTaskbar &&
+                    ShortcutResolver.IsSameExecutable(target, window.WinFileName))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void WatchRunningWindows()
+        {
+            if (_watchedTasks != null)
+            {
+                return;
+            }
+
+            _watchedTasks = GetRunningWindows() as System.Collections.Specialized.INotifyCollectionChanged;
+            if (_watchedTasks != null)
+            {
+                _watchedTasks.CollectionChanged += RunningWindows_CollectionChanged;
+            }
+        }
+
+        private void UnwatchRunningWindows()
+        {
+            if (_watchedTasks != null)
+            {
+                _watchedTasks.CollectionChanged -= RunningWindows_CollectionChanged;
+                _watchedTasks = null;
+            }
+        }
+
+        private void RunningWindows_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (!IsCompactTheme())
+            {
+                return;
+            }
+
+            // Defer: refreshing a view while another collection is mid-change is not safe.
+            Dispatcher.BeginInvoke(new Action(Refresh), System.Windows.Threading.DispatcherPriority.Background);
+        }
+        #endregion
 
         public void SaveItemOrder()
         {
@@ -298,6 +393,8 @@ namespace RetroBar.Controls
             {
                 Settings.Instance.PropertyChanged += Settings_PropertyChanged;
                 Host.hotkeyManager.TaskbarHotkeyPressed += Toolbar_TaskbarHotkeyPressed;
+                WatchRunningWindows();
+                SetItemsSource();
 
                 _isLoaded = true;
             }
@@ -315,6 +412,7 @@ namespace RetroBar.Controls
             {
                 Host.hotkeyManager.TaskbarHotkeyPressed -= Toolbar_TaskbarHotkeyPressed;
             }
+            UnwatchRunningWindows();
 
             _isLoaded = false;
         }

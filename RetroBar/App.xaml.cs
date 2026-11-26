@@ -44,6 +44,15 @@ namespace RetroBar
             Settings.Instance.PropertyChanged += Settings_PropertyChanged;
         }
 
+        // True when the user chose to exit (not a restart, logoff or shutdown).
+        private bool _userRequestedExit;
+
+        public void ExitByUser()
+        {
+            _userRequestedExit = true;
+            ExitGracefully();
+        }
+
         public void ExitGracefully()
         {
             _shellManager.AppBarManager.SignalGracefulShutdown();
@@ -59,6 +68,9 @@ namespace RetroBar
 
             _dictionaryManager.SetLanguageFromSettings();
             loadTheme();
+
+            // Keep Windows' own taskbar on auto-hide while we're in use, so it doesn't flash at boot.
+            WindowsTaskbarState.SetAutoHide(true);
             _windowManager = new WindowManager(_dictionaryManager, _explorerMonitor, _shellManager, _startMenuMonitor, _updater, _hotkeyManager);
             _startMenuMonitor.SetWindowManager(_windowManager);
         }
@@ -144,6 +156,12 @@ namespace RetroBar
             _windowManager.Dispose();
             _dictionaryManager.Dispose();
             _shellManager.Dispose();
+
+            if (_userRequestedExit)
+            {
+                // The user left our taskbar: give them Windows' taskbar back, fully normal.
+                WindowsTaskbarState.SetAutoHide(false);
+            }
             _startMenuMonitor.Dispose();
             _updater.Dispose();
             _hotkeyManager.Dispose();

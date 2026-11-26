@@ -110,8 +110,12 @@ namespace RetroBar.Controls
 
                 Settings.Instance.PropertyChanged += Settings_PropertyChanged;
                 Host.hotkeyManager.TaskbarHotkeyPressed += TaskList_TaskbarHotkeyPressed;
+                // In the compact layout our own size follows the buttons, so it can't be what
+                // triggers the width calculation; the host window's size is.
+                Host.SizeChanged += Host_SizeChanged;
 
                 isLoaded = true;
+                SetTaskButtonWidth();
             }
         }
 
@@ -182,6 +186,11 @@ namespace RetroBar.Controls
                     return false;
                 }
 
+                if (WindowVisibility.IsInvisibleWindow(window.Handle))
+                {
+                    return false;
+                }
+
                 if (!Settings.Instance.ShowMultiMon || Settings.Instance.MultiMonMode == MultiMonOption.AllTaskbars)
                 {
                     return true;
@@ -218,6 +227,7 @@ namespace RetroBar.Controls
             if (Host != null)
             {
                 Host.hotkeyManager.TaskbarHotkeyPressed -= TaskList_TaskbarHotkeyPressed;
+                Host.SizeChanged -= Host_SizeChanged;
             }
 
             Settings.Instance.PropertyChanged -= Settings_PropertyChanged;
@@ -235,10 +245,21 @@ namespace RetroBar.Controls
             SetTaskButtonWidth();
         }
 
+        private void Host_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            SetTaskButtonWidth();
+        }
+
         private void SetTaskButtonWidth()
         {
             if (Host is null)
                 return; // The state is trashed, but presumably it's just a transition
+
+            if (DefaultButtonWidth <= 0)
+            {
+                // The tasks collection can be set up before Loaded, which is where styles are read.
+                SetStyles();
+            }
 
             if (Settings.Instance.Edge == AppBarEdge.Left || Settings.Instance.Edge == AppBarEdge.Right)
             {
@@ -255,6 +276,25 @@ namespace RetroBar.Controls
             TasksList.AlternationCount = taskCount; // keep in sync for correct AlternationIndex
 
             double margin = TaskButtonLeftMargin + TaskButtonRightMargin;
+
+            if (Application.Current.TryFindResource("CompactTaskbar") is bool compact && compact)
+            {
+                // The taskbar body sizes to its content, so our own width can't be used to
+                // compute button widths (it would start at 0 and stay shrunk). Use the space
+                // the host window could give us instead, and only shrink when it runs out.
+                double reserved = Application.Current.TryFindResource("CompactReservedWidth") as double? ?? 0;
+                // Use the screen width: when free-floating, the window itself is sized to its content.
+                double screenWidth = Host.Screen.Bounds.Width / (Host.DpiScale > 0 ? Host.DpiScale : 1);
+                double available = Math.Max(0, (screenWidth / Math.Max(0.1, Settings.Instance.TaskbarScale)) - reserved);
+                double fullWidth = DefaultButtonWidth + margin;
+                double fitWidth = taskCount > 0 ? Math.Floor(available / taskCount) : fullWidth;
+
+                ButtonsPerRow = Math.Max(1, taskCount);
+                ExtraWidthCount = 0;
+                ButtonWidth = Math.Max(MinButtonWidth + margin, Math.Min(fullWidth, fitWidth));
+                SetScrollable(false);                return;
+            }
+
             ButtonsPerRow = Math.Max(1, (int)Math.Ceiling((double)taskCount / rows));
             double maxWidth = TasksList.ActualWidth / ButtonsPerRow;
             double defaultWidth = DefaultButtonWidth + margin;

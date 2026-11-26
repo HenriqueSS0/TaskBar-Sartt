@@ -12,6 +12,10 @@
     <ApplicationIcon>Resources\retrobar.ico</ApplicationIcon>
     <Platforms>AnyCPU;x86;ARM64</Platforms>
     <LangVersion>12</LangVersion>
+    <!-- A taskbar is a small, long-running UI app: the non-concurrent workstation GC saves a
+         background thread and some memory, with no visible pauses at this heap size. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <TieredPGO>true</TieredPGO>
   </PropertyGroup>
 
   <ItemGroup>

@@ -64,6 +64,15 @@
                              RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=Window}" />
                 </DockPanel.Dock>
             </controls:StartButton>
+            <TextBlock x:Name="BrandLabel"
+                       Style="{DynamicResource BrandLabel}">
+                <DockPanel.Dock>
+                    <Binding Converter="{StaticResource dockOrientationConverter}"
+                             ConverterParameter="leading"
+                             Path="Orientation"
+                             RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=Window}" />
+                </DockPanel.Dock>
+            </TextBlock>
             <controls:Toolbar x:Name="QuickLaunchToolbar"
                               Visibility="Collapsed"
                               Path="{Binding Source={x:Static utilities:Settings.Instance}, Path=QuickLaunchPath}"
@@ -142,6 +151,18 @@
             <!-- TODO: Add when desk bands and additional taskbars are supported. -->
             <!--StaticResourceExtension ResourceKey="ToolbarsItem" />
             <Separator /-->
+            <MenuItem x:Name="PositionMenuItem"
+                      Header="Posição da barra"
+                      Visibility="Collapsed">
+                <MenuItem Header="Centralizar embaixo" Tag="Bottom" Click="DockMenuItem_OnClick" />
+                <MenuItem Header="Centralizar em cima" Tag="Top" Click="DockMenuItem_OnClick" />
+                <MenuItem Header="Lado esquerdo" Tag="Left" Click="DockMenuItem_OnClick" />
+                <MenuItem Header="Lado direito" Tag="Right" Click="DockMenuItem_OnClick" />
+                <Separator />
+                <MenuItem Header="Centralizar na borda atual" Tag="Center" Click="DockMenuItem_OnClick" />
+            </MenuItem>
+            <Separator x:Name="PositionMenuSeparator"
+                       Visibility="Collapsed" />
             <StaticResourceExtension ResourceKey="TaskManagerMenuItem" />
             <Separator />
             <MenuItem x:Name="UpdateAvailableMenuItem"

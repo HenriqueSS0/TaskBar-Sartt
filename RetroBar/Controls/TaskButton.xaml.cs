@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using ManagedShell.Common.Helpers;
 using ManagedShell.Interop;
@@ -106,7 +107,28 @@ namespace RetroBar.Controls
                 Animate();
             }
 
+            PopIn();
+
             _isLoaded = true;
+        }
+
+        // Themes opt in with "TaskButtonPopIn": new buttons pop in (grow with a little bounce).
+        private void PopIn()
+        {
+            if (!(Application.Current.TryFindResource("TaskButtonPopIn") is bool popIn && popIn))
+            {
+                return;
+            }
+
+            var transform = new ScaleTransform(1, 1);
+            AppButton.RenderTransformOrigin = new Point(0.5, 0.5);
+            AppButton.RenderTransform = transform;
+
+            var duration = new Duration(TimeSpan.FromMilliseconds(420));
+            var ease = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.6 };
+            transform.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(0.3, 1, duration) { EasingFunction = ease });
+            transform.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(0.3, 1, duration) { EasingFunction = ease });
+            AppButton.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(250))));
         }
 
         private void Window_GetButtonRect(ref NativeMethods.ShortRect rect)

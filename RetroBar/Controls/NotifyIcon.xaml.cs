@@ -130,9 +130,34 @@ namespace RetroBar.Controls
             }
         }
 
+        private bool TryOpenSystemFlyout()
+        {
+            string id = TrayIcon.Identifier;
+
+            if (string.Equals(id, NotificationArea.VOLUME_GUID, StringComparison.OrdinalIgnoreCase))
+            {
+                return Flyouts.FlyoutHost.Toggle(NotifyIconBorder, () => new Flyouts.VolumeFlyout());
+            }
+
+            if (string.Equals(id, NotificationArea.NETWORK_GUID, StringComparison.OrdinalIgnoreCase))
+            {
+                return Flyouts.FlyoutHost.Toggle(NotifyIconBorder, () => new Flyouts.NetworkFlyout());
+            }
+
+            return false;
+        }
+
         private void NotifyIcon_OnMouseUp(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
+
+            // Themes with their own flyouts open them right above the volume and network icons,
+            // instead of Windows' flyouts in the screen corner.
+            if (e.ChangedButton == MouseButton.Left && TrayIcon != null && TryOpenSystemFlyout())
+            {
+                return;
+            }
+
             if (e.ChangedButton == MouseButton.Left)
             {
                 TrayIcon?.IconMouseDown(e.ChangedButton, MouseHelper.GetCursorPositionParam(), System.Windows.Forms.SystemInformation.DoubleClickTime);
