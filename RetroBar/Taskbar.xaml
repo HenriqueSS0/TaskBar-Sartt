@@ -45,6 +45,7 @@
                  Path="AllowFontSmoothing"
                  Converter="{StaticResource textRenderingModeConverter}" />
     </TextOptions.TextRenderingMode>
+    <Grid>
     <ContentControl Style="{DynamicResource Taskbar}" x:Name="TaskbarContentControl">
         <ContentControl.LayoutTransform>
             <ScaleTransform x:Name="TaskbarScaleTransform"
@@ -143,6 +144,12 @@
                                Tasks="{Binding Tasks}"></controls:TaskList>
         </DockPanel>
     </ContentControl>
+        <!-- While auto-hidden, a nearly invisible strip on the screen edge catches the mouse so the
+             taskbar can come back. Transparent themes would otherwise let the pointer fall through. -->
+        <Border x:Name="AutoHideRevealStrip"
+                Background="#01000000"
+                Visibility="Collapsed" />
+    </Grid>
     <appbar:AppBarWindow.ContextMenu>
         <ContextMenu Opened="ContextMenu_Opened">
             <TextOptions.TextRenderingMode>

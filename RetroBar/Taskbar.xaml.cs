@@ -125,6 +125,7 @@ namespace RetroBar
             _dockMagnifier = new DockMagnifier(this);
             ContentRendered += (_, _) =>
             {
+                UpdateAutoHideRevealStrip(true);
                 ApplyDockPosition();
                 PlayAppearAnimation();
 
@@ -270,6 +271,9 @@ namespace RetroBar
             }
             else if (e.PropertyName == nameof(Settings.AutoHide))
             {
+                // Re-evaluated once the mode has changed (below or after reopening).
+                Dispatcher.BeginInvoke(new Action(() => UpdateAutoHideRevealStrip(true)), DispatcherPriority.Loaded);
+
                 bool newTransparency = Settings.Instance.AutoHide || (Application.Current.FindResource("AllowsTransparency") as bool? ?? false);
 
                 if (AllowsTransparency == newTransparency)
@@ -890,9 +894,67 @@ namespace RetroBar
             return (!_startMenuOpen || !Screen.Primary) && _openMenus < 1 && base.ShouldAllowAutoHide();
         }
 
+        // In auto-hide mode, keeps a nearly invisible strip along the docked edge so the pointer is
+        // always "on the taskbar" there: thin (2px) while hidden, to bring it back; and, while shown,
+        // also covering the transparent gap between the bar body and the edge, so it doesn't hide
+        // again while the pointer rests on the edge.
+        private void UpdateAutoHideRevealStrip(bool expanded)
+        {
+            if (AppBarMode != AppBarMode.AutoHide)
+            {
+                AutoHideRevealStrip.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            double thickness = 2;
+            if (expanded && GetPillElement() is FrameworkElement pill)
+            {
+                Thickness margin = pill.Margin;
+                thickness += AppBarEdge switch
+                {
+                    AppBarEdge.Top => margin.Top,
+                    AppBarEdge.Left => margin.Left,
+                    AppBarEdge.Right => margin.Right,
+                    _ => margin.Bottom
+                };
+            }
+            AutoHideRevealStrip.ClearValue(WidthProperty);
+            AutoHideRevealStrip.ClearValue(HeightProperty);
+            AutoHideRevealStrip.HorizontalAlignment = HorizontalAlignment.Stretch;
+            AutoHideRevealStrip.VerticalAlignment = VerticalAlignment.Stretch;
+
+            switch (AppBarEdge)
+            {
+                case AppBarEdge.Top:
+                    AutoHideRevealStrip.VerticalAlignment = VerticalAlignment.Top;
+                    AutoHideRevealStrip.Height = thickness;
+                    break;
+                case AppBarEdge.Left:
+                    AutoHideRevealStrip.HorizontalAlignment = HorizontalAlignment.Left;
+                    AutoHideRevealStrip.Width = thickness;
+                    break;
+                case AppBarEdge.Right:
+                    AutoHideRevealStrip.HorizontalAlignment = HorizontalAlignment.Right;
+                    AutoHideRevealStrip.Width = thickness;
+                    break;
+                default:
+                    AutoHideRevealStrip.VerticalAlignment = VerticalAlignment.Bottom;
+                    AutoHideRevealStrip.Height = thickness;
+                    break;
+            }
+
+            AutoHideRevealStrip.Visibility = Visibility.Visible;
+        }
+
         protected override void OnAutoHideAnimationBegin(bool isHiding)
         {
             base.OnAutoHideAnimationBegin(isHiding);
+
+            if (!isHiding)
+            {
+                // Grow before the body slides in, so the pointer never ends up on a see-through gap.
+                UpdateAutoHideRevealStrip(true);
+            }
 
             // Prevent focus indicators and tooltips while hidden
             ResetControlFocus();
@@ -911,6 +973,11 @@ namespace RetroBar
         protected override void OnAutoHideAnimationComplete(bool isHiding)
         {
             base.OnAutoHideAnimationComplete(isHiding);
+
+            if (isHiding)
+            {
+                UpdateAutoHideRevealStrip(false);
+            }
 
             if (isHiding && Settings.Instance.AutoHideTransparent && AllowsTransparency && AllowAutoHide)
             {
