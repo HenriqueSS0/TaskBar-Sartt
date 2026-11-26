@@ -66,16 +66,25 @@ namespace RetroBar.Controls
         {
             // Center the popup over the arrow, and flip it below for a top taskbar.
             Taskbar host = Window.GetWindow(this) as Taskbar;
+
+            // Keep an auto-hiding taskbar visible while the pointer is over the popup.
+            host?.AddOpenMenu();
+            _overflowHost = host;
             bool top = host != null && host.AppBarEdge == ManagedShell.AppBar.AppBarEdge.Top;
             OverflowPopup.Placement = top ? System.Windows.Controls.Primitives.PlacementMode.Bottom : System.Windows.Controls.Primitives.PlacementMode.Top;
             OverflowPopup.VerticalOffset = top ? 12 : -12;
             OverflowPopup.HorizontalOffset = (NotifyIconToggleButton.ActualWidth - OverflowBorder.ActualWidth) / 2;
         }
 
+        private Taskbar _overflowHost;
+
         private void OverflowPopup_Closed(object sender, EventArgs e)
         {
             _overflowClosedAt = DateTime.Now;
             NotifyIconToggleButton.IsChecked = false;
+
+            _overflowHost?.RemoveOpenMenu();
+            _overflowHost = null;
         }
 
         private void OverflowIcon_Loaded(object sender, RoutedEventArgs e)

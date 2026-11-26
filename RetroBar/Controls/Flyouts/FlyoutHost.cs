@@ -108,10 +108,16 @@ namespace RetroBar.Controls.Flyouts
 
                 PlayOpenAnimation(panel, edge);
             };
+            // While the flyout is open, an auto-hiding taskbar must stay visible: the pointer is
+            // over the flyout (another window), which would otherwise count as leaving the bar.
+            var taskbar = Window.GetWindow(anchor) as Taskbar;
+            taskbar?.AddOpenMenu();
+
             _popup.Closed += (_, _) =>
             {
                 _closedAt = DateTime.Now;
                 (content as IDisposable)?.Dispose();
+                taskbar?.RemoveOpenMenu();
             };
 
             _popup.IsOpen = true;
